@@ -1,233 +1,252 @@
 #include "linklist.h"
-#include "linklist_node.h"
+#include <stdio.h>
 
-FUNC_TABLE_INIT(linklist) {
-	FUNC_TABLE_SET(linklist, distructor),
-	FUNC_TABLE_SET(linklist, clear),
-	FUNC_TABLE_SET(linklist, push_back),
-	FUNC_TABLE_SET(linklist, push_front),
-	FUNC_TABLE_SET(linklist, pop_front),
-	FUNC_TABLE_SET(linklist, pop_back),
-	FUNC_TABLE_SET(linklist, front),
-	FUNC_TABLE_SET(linklist, back),
-	FUNC_TABLE_SET(linklist, remove),
-	FUNC_TABLE_SET(linklist, get_size)
+class(linklist_node)
+	public_member
+		void *data;
+		linklist_node *next;
+		linklist_node *prev;
+	public_member_end
+
+	class_constructor_decl(linklist_node);
+	class_distructor_decl(linklist_node);
+
+	no_public_method(linklist_node)
+class_end
+
+functable_init(linklist_node) {
+	set_func(linklist_node, distructor)
 };
 
-PRIVATE_MEMBER(linklist) {
-	int32_t magic;
-	linklist_node *head;
-	linklist_node *tail;
-	linklist_node *invalid;
-	uint32_t length;
+functable_init(linklist) {
+	set_func(linklist, distructor),
+	set_func(linklist, clear),
+	set_func(linklist, push_back),
+	set_func(linklist, push_front),
+	set_func(linklist, pop_front),
+	set_func(linklist, pop_back),
+	set_func(linklist, front),
+	set_func(linklist, back),
+	set_func(linklist, remove),
+	set_func(linklist, get_size)
 };
 
-CLASS_CONSTRUCTOR_BASE_IMPL(linklist) {
-	pv(length) = 0;
-	pv(head) = pv(tail) = NULL;
-	pv(invalid) = new(linklist_node);
+functable_init(linklist_iterator) {
+	set_func(linklist_iterator, distructor),
+	set_func(linklist_iterator, getend),
+	set_func(linklist_iterator, next),
+	set_func(linklist_iterator, prev),
+	set_func(linklist_iterator, get_data),
+	set_func(linklist_iterator, set_list)
+};
+
+class_constructor_base_impl(linklist_node) {
+	self->data = NULL;
+	self->next = NULL;
+	self->prev = NULL;
 }
 
-CLASS_DISTRUCTOR_BASE_IMPL(linklist) {
-	delete(pv(invalid));
+class_distructor_base_impl(linklist_node) {
+
+}
+
+class_constructor_base_impl(linklist) {
+	self->length = 0;
+	self->head = self->tail = NULL;
+	self->invalid = new(linklist_node);
+}
+
+class_distructor_base_impl(linklist) {
+	delete(self->invalid);
 	self_invoke(clear);
 }
 
-METHOD_IMPL
+method_impl
 (void, linklist, clear) {
 	linklist_node *temp;
 	uint32_t i = 0;
 
-	for (i = 0; i < pv(length); ++i) {
-		temp = pv(head);
-		pv(head) = pb_mb(pv(head), next);
+	for (i = 0; i < self->length; ++i) {
+		temp = self->head;
+		self->head = self->head->next;
 		delete(temp);
 	}
 	
-	pv(tail) = pv(head) = NULL;
-	pv(length) = 0;
-}METHOD_END
+	self->tail = self->head = NULL;
+	self->length = 0;
+}method_end
 
-METHOD_IMPL
+method_impl
 (void, linklist, push_back, void *data) {
 	linklist_node *node = new(linklist_node);
-	pb_mb(node, data) = data;
+	node->data = data;
 
-	if (!pv(length)) {
-		pv(head) = pv(tail) = node;
+	if (!self->length) {
+		self->head = self->tail = node;
 	}
 	else {
-		pb_mb(pv(tail), next) = node;
-		pb_mb(pb_mb(pv(tail), next), prev) = pv(tail);
-		pv(tail) = pb_mb(pv(tail), next);
+		self->tail->next = node;
+		node->prev = self->tail;
+		self->tail = node;
 	}
-	pv(length)++;
-}METHOD_END
+	self->length++;
+}method_end
 
-METHOD_IMPL
+method_impl
 (void, linklist, push_front, void *data) {
 	linklist_node *node = new(linklist_node);
-	pb_mb(node, data) = data;
+	node->data = data;
 
-	if (!pv(length)) {
-		pv(head) = pv(tail) = node;
+	if (!self->length) {
+		self->head = self->tail = node;
 	}
 	else {
-		pb_mb(pv(head), prev) = node;
-		pb_mb(pb_mb(pv(head), prev), next) = pv(head);
-		pv(head) = pb_mb(pv(head), prev);
+		self->head->prev = node;
+		node->next = self->head;
+		self->head = node;
 	}
-	pv(length)++;
-}METHOD_END
+	self->length++;
+}method_end
 
-METHOD_IMPL
+method_impl
 (void, linklist, remove_node, linklist_node *node) {
 	linklist_node *temp;
-	if (pv(length) == 0)
+	if (self->length == 0)
 		return;
 
-	pv(length)--;
+	self->length--;
 
-	if (pv(length) == 0) {
-		temp = pv(head);
-		pv(head) = pv(tail) = NULL;
+	if (self->length == 0) {
+		temp = self->head;
+		self->head = self->tail = NULL;
 		delete(temp);
 		return;
 	}
 
-	if (pv(head) == node) {
-		temp = pv(head);
-		pv(head) = pb_mb(pv(head), next);
-		pb_mb(pv(head), prev) = NULL;
+	if (self->head == node) {
+		temp = self->head;
+		self->head = self->head->next;
+		self->head->prev = NULL;
 		delete(temp);
 		return;
 	}
 
-	if (pv(tail) == node) {
-		temp = pv(tail);
-		pv(tail) = pb_mb(pv(tail), prev);
-		pb_mb(pv(tail), next) = NULL;
+	if (self->tail == node) {
+		temp = self->tail;
+		self->tail = self->tail->prev;
+		self->tail->next = NULL;
 		delete(temp);
 		return;
 	}
 
-	pb_mb(pb_mb(node, prev), next) = pb_mb(node, next);
-	pb_mb(pb_mb(node, next), prev) = pb_mb(node, prev);
+	node->prev->next = node->next;
+	node->next->prev = node->prev;
 	delete(node);
-}METHOD_END
+}method_end
 
-METHOD_IMPL
+method_impl
 (void *, linklist, pop_front) {
 	void *data;
 
-	if (!pv(length))
+	if (!self->length)
 		return NULL;
 
-	data = pb_mb(pv(head), data);
+	data = self->head->data;
 
-	linklist_remove_node(self, pv(head));
+	linklist_remove_node(self, self->head);
 
 	return data;
-}METHOD_END
+}method_end
 
-METHOD_IMPL
+method_impl
 (void *, linklist, pop_back) {
 	void *data;
 
-	if (!pv(length))
+	if (!self->length)
 		return NULL;
 
-	data = pb_mb(pv(tail), data);
-	linklist_remove_node(self, pv(tail));
+	data = self->tail->data;
+	linklist_remove_node(self, self->tail);
 
 	return data;
-}METHOD_END
+}method_end
 
-METHOD_IMPL
+method_impl
 (void *, linklist, front) {
-	return pv(head) ? pb_mb(pv(head), data) : NULL;
-}METHOD_END
+	return self->head ? self->head->data : NULL;
+}method_end
 
-METHOD_IMPL
+method_impl
 (void *, linklist, back) {
-	return pv(tail) ? pb_mb(pv(tail), data) : NULL;
-}METHOD_END
+	return self->tail ? self->tail->data : NULL;
+}method_end
 
-METHOD_IMPL
+method_impl
 (void, linklist, remove, void *data) {
-	linklist_node *node = pv(head);
+	linklist_node *node = self->head;
 	while (node != NULL) {
-		if (pb_mb(node, data) == data) {
+		if (node->data == data) {
 			linklist_remove_node(self, node);
 			return;
 		}
-		node = pb_mb(node, next);
+		node = node->next;
 	}
-}METHOD_END
+}method_end
 
-METHOD_IMPL
+method_impl
 (uint32_t, linklist, get_size) {
-	return pv(length);
-}METHOD_END
+	return self->length;
+}method_end
 
-FUNC_TABLE_INIT(linklist_iterator) {
-	FUNC_TABLE_SET(linklist_iterator, distructor),
-	FUNC_TABLE_SET(linklist_iterator, getend),
-	FUNC_TABLE_SET(linklist_iterator, next),
-	FUNC_TABLE_SET(linklist_iterator, prev),
-	FUNC_TABLE_SET(linklist_iterator, get_data),
-	FUNC_TABLE_SET(linklist_iterator, set_list)
-};
-
-PRIVATE_MEMBER(linklist_iterator) {
-	linklist *list;
-	linklist_node *node;
-};
-
-CLASS_CONSTRUCTOR_BASE_IMPL(linklist_iterator) {
-	pv(list) = NULL;
-	pv(node) = NULL;
+class_constructor_base_impl(linklist_iterator) {
+	self->list = NULL;
+	self->node = NULL;
 }
 
-CLASS_DISTRUCTOR_BASE_IMPL(linklist_iterator) {
+class_constructor_arg_impl(linklist_iterator, list,
+	linklist *list) {
+	self_invoke(set_list, list);
+}class_constructor_end
+
+class_distructor_base_impl(linklist_iterator) {
 
 }
 
-METHOD_IMPL
+method_impl
 (bool, linklist_iterator, getend) {
-	return pv(node) == pv_mb(pv(list), invalid);
-}METHOD_END
+	return self->node == self->list->invalid;
+}method_end
 
-METHOD_IMPL
+method_impl
 (void, linklist_iterator, next) {
 	if (self_invoke(getend))
 		return;
 
-	if (pv(node) == pv_mb(pv(list), tail))
-		pv(node) = pv_mb(pv(list), invalid);
+	if (self->node == self->list->tail)
+		self->node = self->list->invalid;
 	else
-		pv(node) = pb_mb(pv(node), next);
-}METHOD_END
+		self->node = self->node->next;
+}method_end
 
-METHOD_IMPL
+method_impl
 (void, linklist_iterator, prev) {
 	if (self_invoke(getend))
 		return;
 
-	if (pv(node) == pv_mb(pv(list), head))
-		pv(node) = pv_mb(pv(list), invalid);
+	if (self->node == self->list->head)
+		self->node = self->list->invalid;
 	else
-		pv(node) = pb_mb(pv(node), prev);
-}METHOD_END
+		self->node = self->node->prev;
+}method_end
 
-METHOD_IMPL
+method_impl
 (void *, linklist_iterator, get_data) {
-	return pv(node) != pv_mb(pv(list), invalid) ?
-		pb_mb(pv(node), data) : NULL;
-}METHOD_END
+	return self->node != self->list->invalid ?
+		   self->node->data : NULL;
+}method_end
 
-METHOD_IMPL
+method_impl
 (void, linklist_iterator, set_list, linklist *list) {
-	pv(list) = list;
-	pv(node) = pv_mb(list, length) ? pv_mb(list, head) : pv_mb(list, invalid);
-}METHOD_END
+	self->list = list;
+	self->node = list->length ? list->head : list->invalid;
+}method_end

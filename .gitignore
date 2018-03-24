@@ -1,0 +1,6 @@
+*.VC.db
+*.VC.VC.opendb
+Debug
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user

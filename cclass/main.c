@@ -2,6 +2,13 @@
 
 #include <stdio.h>
 
+struct abc {
+	int i;
+	struct abc *next;
+};
+
+struct abc test[4] = { 10, test + 1, 20, test + 2, 30, test + 3, 40, NULL };
+
 int main() {
 	int integer[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 	linklist *list = new(linklist);
