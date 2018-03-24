@@ -1,12 +1,13 @@
 #ifndef C_CLASS_H
 #define C_CLASS_H
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <assert.h>
 
-#define ptr_cast(classname, ptr) (classname*)ptr
+#define magic(ptr) *(int32_t*)(ptr)
+#define ptr_cast(classname, ptr) ptr_cast_ ## classname((ptr));
 
 //	alloc
 #define new(classname) classname ## _constructor((classname*)malloc(sizeof(classname)), NULL)
@@ -49,12 +50,12 @@ CLASS_BASE(classname) \
 
 #define class_end
 
-/************************类成员变量***************************************************************/
+/************************class member variable***************************************************************/
 #define public_member
 
 #define public_member_end BLOCK_END
 
-/************************类成员函数***************************************************************/
+/************************class member method*****************************************************************/
 #define public_method(classname) \
 struct classname ## _functable_t { \
 	void(*distructor)(void*self);
@@ -74,7 +75,7 @@ type classname ## _ ## func(SELF, __VA_ARGS__) { \
 	classname *self = ptr_cast(classname, s);
 #define method_end }
 
-/************************类构造、析构函数*********************************************************/
+/************************constructor and distructor*******************************************************/
 #define class_constructor_decl(classname) \
 classname *classname ## _constructor \
 	(classname *self, void *vftable)
@@ -129,10 +130,17 @@ void classname ## _distructor(classname *self) { \
 } \
 inline void classname ## _distructor_fn(classname *self) 
 
-/************************类虚函数表初始化*********************************************************/
+/************************virtual table initialize*********************************************************/
 #define functable_init(classname) \
 static classname ## _functable classname ## _f = 
 
 #define set_func(classname, func) classname ## _ ## func
+
+/************************pointer cast function template***************************************************/
+#define ptr_cast_impl(classname, condition) \
+inline classname *ptr_cast_ ## classname(void *ptr) { \
+	assert(ptr && condition); \
+	return (classname*)ptr; \
+}	
 
 #endif // !C_CLASS_H

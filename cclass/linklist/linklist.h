@@ -74,6 +74,18 @@ method_decl(void, linklist_iterator, prev);
 method_decl(void *, linklist_iterator, get_data);
 method_decl(void, linklist_iterator, set_list, linklist *list);
 
+ptr_cast_impl(linklist, 
+	(magic(ptr) == magic_linklist)
+)
+
+ptr_cast_impl(linklist_iterator,
+	(magic(ptr) == magic_linklist_iterator)
+)
+
+ptr_cast_impl(linklist_node,
+	(magic(ptr) == magic_linklist_node)
+)
+
 #define linklist_foreach_begin(type, elem, list) \
 {												 \
 	linklist_iterator *iter = new_args(linklist_iterator, list, list); \

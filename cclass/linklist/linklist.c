@@ -1,6 +1,7 @@
 #include "linklist.h"
 #include <stdio.h>
 
+
 class(linklist_node)
 	public_member
 		void *data;
